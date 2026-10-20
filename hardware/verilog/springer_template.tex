@@ -1,0 +1,308 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.21 of 2022/01/12
+%
+\documentclass[runningheads]{llncs}
+% \usepackage{times}
+\usepackage[T1]{fontenc}
+% T1 fonts will be used to generate the final print and online PDFs,
+% so please use T1 fonts in your manuscript whenever possible.
+% Other font encondings may result in incorrect characters.
+%
+\usepackage{graphicx}
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following two lines
+% to display URLs in blue roman font according to Springer's eBook style:
+\usepackage{color}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\renewcommand\UrlFont{\color{blue}\rmfamily}
+%\urlstyle{rm}
+%
+\begin{document}
+\raggedbottom
+%
+\title{FPGA-Based RISC-V System-on-Chip: Design
+and Implementation}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Abderrahmane Azaz\inst{3}\orcidID{0009-0004-7931-6792} \and
+Hassan Ouahi\inst{3}\and
+Amine Saddik\inst{1,3} \and
+Azzedine Dliou\inst{1,3} \and
+Mohamed Zarboubi\inst{2,3} \and
+Zakaria EL Khadiri\inst{1,3} \and Rachid Fateh\inst{3} \and Omar bamaarouf \inst{4}
+}
+%
+\authorrunning{   }
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{
+ Laboratory of Systems Engineering and Information Technology (LISTI), National School of Applied Sciences, Ibnou Zohr University, Agadir 80000, Morocco \and
+ LISAD Laboratory, National School of Applied Sciences, Ibn Zohr University, Agadir, Morocco \and
+ IMIS Laboratory, Faculty of Applied Sciences, Ibn Zohr University, Agadir, Morocco
+\and
+ Interdisciplinary Applied Research Laboratory, International University of Agadir-Universiapolis, Agadir 80000, Morocco
+% \email{lncs@springer.com}\\
+% \url{http://www.springer.com/gp/computer-science/lncs} \and
+% ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
+% \email{\{abc,lncs\}@uni-heidelberg.de}
+}
+%
+\maketitle              % typeset the header of the contribution
+%
+\begin{abstract}
+Proprietary instruction set architectures can be restrictive for research and education. This paper presents the design and implementation of a custom RISC-V System-on-Chip (SoC) built from the ground up using the open-source PicoRV32 core. The SoC features a split memory architecture with a 4 KB boot ROM and 32 KB of main RAM, alongside memory-mapped peripherals including UART and basic I/O interfaces. We validate the system on a DE1-SoC FPGA board using a hybrid dual-boot ROM architecture, allowing instantaneous execution from pre-loaded RAM or rapid over-the-air firmware deployment via a robust 115200 baud UART link. The deployed custom C firmware performs a hardware-timed matrix multiplication benchmark, demonstrating real-time processing, interactive serial console I/O, and exact hardware cycle counting. The design is highly resource-efficient, using only 995 ALMs and 1,085 registers. By documenting the entire hardware-software co-design process, we show how minimal, open-source RISC-V cores can be effectively used in educational settings and as a practical starting point for custom embedded hardware.
+
+\keywords{RISC-V \and Open Source Architecture \and FPGA Implementation \and Embedded Systems \and System-On-Chip Design.}
+\end{abstract}
+
+\section{Introduction}\label{sec1}
+
+Instruction Set Architectures (ISAs) form the crucial interface between software and hardware, shaping how processors execute code and how systems are built \cite{Patterson2016}. Historically, proprietary ISAs such as x86 and ARM have dominated the market, guiding decades of processor design. However, their closed nature and restrictive licensing models have constrained innovation, especially in academia and emerging markets \cite{Waterman2014}.
+
+RISC-V, introduced in 2010 at the University of California, Berkeley, offers a compelling alternative. It is a free, open, and extensible ISA that enables anyone to design, implement, and commercialize processors without incurring royalties \cite{Asanovic2011}. RISC-V follows a modular "base-plus-extension" philosophy, allowing to tailor the architecture to a wide range of applications, from low-power IoT devices to high-performance computing systems \cite{Waterman2014}. This openness promotes innovation, customizability, and vendor neutrality, aligning well with modern demands for domain-specific and sovereign computing \cite{10049118}.
+
+Beyond the technical merits of the ISA itself, RISC-V lowers the barrier of entry for teaching and research groups that would otherwise depend on vendor-licensed processor IP whose internal microarchitecture is undisclosed. In a university setting, this openness is particularly valuable: a fully documented, freely modifiable core can be synthesized, instrumented, and taught down to the register-transfer level, something that is simply not possible with a black-box commercial core. This consideration motivates the present work, in which a complete RISC-V SoC is built from first principles using openly available tools and cores, rather than relying on a vendor-supplied soft-processor IP such as Nios II or MicroBlaze.
+
+The adoption of RISC-V has accelerated rapidly across industries:
+\begin{itemize}
+% \item \textbf{Embedded Systems and IoT:} RISC-V enables low-power IoT devices with secure cryptographic implementations and ultra-efficient sensing capabilities \cite{saddik2021realtime, saddik2021lowpower}.
+\item \textbf{Embedded Systems and IoT:} RISC-V enables low-power IoT devices for precision agriculture applications, such as disease detection in crops and monitoring agricultural fields using embedded robot cars and deep learning models \cite{saddik2024yolo,saddik2024tomato}. Furthermore, open architectures are increasingly relevant for deploying lightweight deep learning models for UAV-based yield estimation in citrus orchards\cite{saddik_uav}, assessing the health of unique ecosystems such as Moroccan argan trees via multispectral machine learning \cite{saddik_assessing}, and processing sustainable vegetation indices on low-cost architectures \cite{saddik_sus}.
+% \cite{preethi2024elliptic, riscos2023implementation}.
+
+\item \textbf{Artificial Intelligence and Machine Learning:} The open architecture supports custom AI optimizations with heterogeneous processors designed for efficient neural network execution \cite{kalapothas2023survey,caon2024heterogeneous}.
+
+\item \textbf{High-Performance Computing (HPC):} RISC-V vector extensions demonstrate competitive performance in scientific computing workloads and big-data applications \cite{brown2023test,authors2023risc}.
+
+% \item \textbf{Edge Computing and Near-Memory Processing:} Scalable near-memory architectures reduce data movement overhead with energy-efficient processing for edge applications \cite{caon2024scalable, adaptive2024energy, lumpp2023containerization}.
+\item \textbf{Edge Computing and Near-Memory Processing:} Scalable near-memory architectures reduce data movement overhead with energy-efficient processing for edge applications, including workload partitioning of bio-inspired SLAM algorithms on embedded systems \cite{caon2024scalable,adaptive2024energy,saddik2021slam}.
+\end{itemize}
+
+Despite this broad momentum, most published RISC-V case studies either target high-end application-class cores capable of booting Linux, or report isolated resource and performance numbers without describing the full hardware-software co-design flow needed to reproduce them. There remains comparatively little material documenting, end to end, how a minimal but complete SoC  core, memory, peripherals, toolchain, and firmware  can be assembled from open building blocks and brought up on a mid-range educational FPGA board. This gap is precisely what motivates the design presented here.
+
+This paper presents the design and implementation of a custom RISC-V System-on-Chip, built from the ground up. The SoC is based on the open-source PicoRV32 core and features a dedicated boot ROM and main RAM, alongside memory-mapped peripherals such as UART and GPIO, capable of running firmware. The main contributions of this work are as follows:
+\begin{itemize}
+\item A complete, reproducible hardware-software co-design flow for a PicoRV32-based SoC, from RTL integration through firmware cross-compilation to FPGA bring-up;
+\item A resource-efficient memory-mapped peripheral set (UART and GPIO/7-segment display) integrated around the PicoRV32 native memory interface;
+\item An experimental validation of the design on a DE1-SoC board, including real-time functional verification using physical hardware I/O (switches and LEDs) and a detailed account of FPGA resource utilization;
+\item A discussion of the design's place within the broader landscape of open-source RISC-V soft-core implementations, together with its limitations and directions for future work.
+\end{itemize}
+
+\noindent The rest of the paper is structured as follows. Section~\ref{sec2} reviews related work on open-source RISC-V soft cores and their FPGA implementations. Section~\ref{sec3} introduces the relevant RISC-V ISA background and the PicoRV32 core used in this work. Section~\ref{sec4} details the hardware and firmware design methodology. Section~\ref{sec5} presents the implementation results and resource utilization on the DE1-SoC FPGA. Section~\ref{sec6} discusses the findings in light of the related work, and Section~\ref{sec7} concludes the work and outlines future directions.
+
+\section{Related Work}\label{sec2}
+
+The growing interest in RISC-V has produced a substantial body of work on open-source soft-core implementations for FPGAs, ranging from minimal microcontroller-class cores to application-class, Linux-capable designs. This section situates the present work within that landscape.
+
+H{\"o}ller et al. surveyed a broad set of open-source 32-bit RISC-V IP cores suitable for FPGA implementation, providing an overview of the ecosystem and evaluation results for a selection of representative cores \cite{holler2019opensource}. Their work highlighted that, at the time, more than a hundred open-source CPU cores existed in various states of maturity, and that selecting an appropriate core for a given design required careful consideration of resource usage, toolchain support, and documentation quality. D{\"o}rflinger et al. later extended this line of work with a comparative survey specifically targeting application-class, Linux-capable RISC-V cores (such as Rocket and BOOM), benchmarking them on identical FPGA and ASIC platforms to obtain directly comparable performance, area, and power figures \cite{dorflinger2021comparative}. While their study focuses on higher-end cores than the one used in this work, its methodology underscores a broader point echoed throughout the RISC-V soft-core literature: reported resource and performance numbers are highly sensitive to the target toolchain, FPGA family, and configuration options, which makes cross-paper comparisons only indicative rather than exact.
+
+Closer to the scale of the design presented here, Jahnke et al. carried out an extensive performance evaluation of the PicoRV32 softcore specifically, using CoreMark and Embench benchmarks on a resource-constrained low-power FPGA target \cite{jahnke2023performance}. Their analysis identified the memory interface as a significant bottleneck for the core across configurations, and quantified how enabling optional features (such as the built-in interrupt controller or hardware multiplier) trades additional logic resources for functionality. This finding is directly relevant to the design choices discussed in Section~\ref{sec4}, where only the peripheral set strictly required for the target application was enabled.
+
+At the other end of the performance spectrum, Mashimo et al. proposed the RSD, an FPGA-optimized out-of-order RISC-V soft processor, and showed that careful use of FPGA-friendly multiport memory structures can substantially improve performance-per-resource relative to earlier open-source out-of-order designs \cite{mashimo2019opensource}. This contrast between minimal, single-issue cores such as PicoRV32 and heavily pipelined, speculative designs such as RSD illustrates the wide design space that the RISC-V ISA makes accessible: the same instruction set can back implementations that differ by more than an order of magnitude in complexity and resource usage, a flexibility that is largely foreclosed by proprietary, single-vendor ISAs.
+
+The PicoRV32 core itself, developed by Wolf and maintained under the YosysHQ organization, implements the RV32IMC instruction set and can be configured down to RV32E or up to RV32IMC, optionally including a built-in interrupt controller and a co-processor interface for non-branching custom instructions \cite{wolf2019picorv32}. It is distributed under the permissive ISC license and is reported to occupy between roughly 750 and 2000 look-up tables when synthesized for 7-series Xilinx FPGAs, depending on configuration \cite{wolf2019picorv32}; because the design in this paper targets an Intel/Altera Cyclone V device using a different logic fabric (adaptive logic modules rather than look-up tables), these figures are not directly comparable to the ALM-based utilization reported in Section~\ref{sec5}, but they are consistent with PicoRV32's stated design goal of minimizing core area at the expense of peak performance. This same core has previously been used as the basis of the PicoSoC reference design and, notably, of Raven, a silicon-validated open-source SoC that demonstrates PicoRV32's suitability not only for FPGA prototyping but also for ASIC tape-out, reinforcing the practical relevance of the FPGA-based validation carried out in this work as a precursor to potential ASIC realization.
+
+Table~\ref{tab:related} summarizes the positioning of these studies relative to the present work, in terms of the class of RISC-V core they target and their primary contribution.
+
+\begin{table}[htbp]
+\centering
+\caption{Positioning of related open-source RISC-V soft-core studies relative to this work}
+\label{tab:related}
+\begin{tabular}{@{}p{2.6cm}p{2.0cm}p{5.7cm}@{}}
+\toprule
+\textbf{Study} & \textbf{Core class} & \textbf{Primary focus} \\
+\midrule
+H{\"o}ller et al. \cite{holler2019opensource} & Mixed (survey) & Overview and evaluation of open-source 32-bit RISC-V IP cores for FPGAs \\
+D{\"o}rflinger et al. \cite{dorflinger2021comparative} & Application-class & Cross-platform benchmarking of Linux-capable cores (e.g., Rocket, BOOM) \\
+Mashimo et al. \cite{mashimo2019opensource} & Out-of-order & FPGA-optimized OoO soft processor (RSD), performance-per-resource focus \\
+Jahnke et al. \cite{jahnke2023performance} & Microcontroller-class & Benchmark-based evaluation of PicoRV32 on a resource-constrained FPGA \\
+This work & Microcontroller-class & Full hardware-software co-design flow: PicoRV32 SoC, peripherals, firmware, FPGA bring-up \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Taken together, this body of work indicates that (i) the open-source RISC-V ecosystem spans a wide spectrum of core complexities, each suited to different application domains; (ii) minimal cores such as PicoRV32 remain a well-studied and pragmatic choice when the goal is a small, auxiliary, or educational processor rather than peak throughput; and (iii) reported resource figures across studies must be read in the context of the specific target technology, which is the approach followed in this paper. Relative to the surveys and benchmarking studies above, the contribution of this paper is narrower in scope but more complete in another dimension: rather than comparing many cores or benchmarking a single core in isolation, it documents an entire working SoC  from RTL to a running, hardware-integrated firmware application,built around one such core, which is the level of detail most directly reusable by a group starting a similar design from scratch.
+
+\section{RISC-V ISA and PicoRV32 Overview}\label{sec3}
+
+Before describing the SoC architecture, it is useful to summarize the relevant elements of the RISC-V ISA and of the PicoRV32 core on which the design is built, since these choices directly shape the hardware and firmware described in Section~\ref{sec4}.
+
+\subsection{The RISC-V Base ISA and Extensions}
+RISC-V defines a small mandatory base integer instruction set  RV32I for 32-bit implementations  covering arithmetic, logic, control-flow, and load/store instructions, together with a set of optional standard extensions that can be added as needed \cite{Waterman2014}. Commonly used extensions include \texttt{M} for integer multiplication and division, \texttt{A} for atomic memory operations, \texttt{C} for a compressed 16-bit instruction encoding that reduces code size, and \texttt{F}/\texttt{D} for single- and double-precision floating point. A design can therefore be tailored to its application by including only the extensions it actually needs, rather than paying the area and complexity cost of a fixed, one-size-fits-all instruction set. This modularity is central to why RISC-V is attractive for small, purpose-built SoCs such as the one described here, where every additional instruction implemented in hardware has a direct cost in logic resources.
+
+\subsection{The PicoRV32 Core}
+The SoC described in this paper is built around PicoRV32, a size-optimized, single-issue RISC-V core implementing the RV32IMC instruction set family \cite{wolf2019picorv32}. Architecturally, PicoRV32 is a multi-cycle, non-pipelined design: each instruction is fetched and executed over several clock cycles rather than being pipelined across dedicated stages. This design choice trades peak instruction throughput for a small logic footprint and a high maximum operating frequency relative to its size, which makes the core easy to integrate into a larger design without introducing timing closure difficulties \cite{wolf2019picorv32}. The core exposes three interface variants: a simple native memory interface, an AXI4-Lite master interface, and a Wishbone master interface, allowing it to be dropped into systems that already standardize on one of these on-chip buses. For this work, the native memory interface variant was used, as it offers the most direct and resource-efficient path to interfacing custom memory-mapped peripherals without the overhead of a full bus protocol.
+
+PicoRV32 additionally supports an optional built-in interrupt controller and an optional Pico Co-Processor Interface (PCPI) that can be used to offload non-branching instructions  such as multiplication  to an external co-processor. Both are configurable at synthesis time via Verilog parameters, so that unused functionality can be excluded to minimize resource usage, consistent with the resource-versus-feature trade-off characterized empirically by Jahnke et al. \cite{jahnke2023performance}.
+
+\subsection{Memory-Mapped I/O as a Peripheral Interconnect Strategy}
+Rather than adopting a standardized on-chip bus such as AXI4-Lite or Wishbone for the peripheral set, the design uses PicoRV32's native memory interface directly, with peripherals exposed as memory-mapped registers distinguished from RAM and instruction memory by address range. This is a common and pragmatic strategy for small SoCs with a handful of peripherals, since it avoids the logic and latency overhead of a full bus protocol while still allowing peripherals to be accessed with ordinary load and store instructions from C code, via macros that resolve to fixed peripheral base addresses. The trade-off, discussed further in Section~\ref{sec6}, is that this approach does not scale as gracefully as a standardized bus once the number of peripheral cores or bus masters grows.
+
+\section{Methodology}\label{sec4}
+Our SoC design consists of the PicoRV32 core, on-chip memory (ROM and RAM), and memory-mapped peripherals including a UART and basic I/O ports. We wrote all hardware modules in SystemVerilog (Fig.~\ref{fig:block1}) and compiled the C firmware using the standard RISC-V GCC toolchain (Fig.~\ref{fig:block2}). Fig.~\ref{fig:block} shows the overall flow from hardware architecture to firmware generation. This setup gives us a complete platform to test hardware-software interaction on the FPGA.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.50\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Design_entry2.png}
+        \caption{Hardware architecture block diagram}
+        \label{fig:block1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.65\linewidth]{software_stack2.png}
+        \caption{Firmware build and HEX generation flow}
+        \label{fig:block2}
+    \end{subfigure}
+    \caption{Components and co-design flow of the custom RISC-V SoC: (a) Hardware block diagram; (b) Software compilation stack.}
+    \label{fig:block}
+\end{figure}
+
+\subsection{SoC Architecture Overview}
+The top-level SoC connects the PicoRV32 core to its memory and peripherals using a simple address decoder. Instead of a complex bus protocol, we use the core's native memory interface. The address decoder acts like a traffic cop: it looks at the address the CPU wants to access and activates the correct component. 
+Our memory map is split into distinct regions. The boot ROM is located at base address \texttt{0x00000000}, and the main system RAM is at \texttt{0x00004000}. The peripheral registers (input switches, output LEDs, and UART) are mapped to higher addresses (\texttt{0x40000000} and above). This combinational decoding logic is written directly in SystemVerilog, keeping memory accesses fast and single-cycle.
+
+\subsection{Memory Subsystem}
+The memory is divided into a 4\,KB read-only boot ROM and a 32\,KB read/write RAM. Both are built using the FPGA's internal block memory. We initialize the ROM with a hex file (\texttt{bootrom.hex}) during synthesis so the CPU has code to run right after a reset. The 32\,KB RAM provides enough space for the main firmware, stack, and variables. By inferring these memories directly from standard SystemVerilog arrays instead of using Intel-specific IP cores, the design remains portable to other FPGA brands. Both memories respond in a single clock cycle, avoiding the need for wait states.
+
+\subsection{UART Peripheral}
+To communicate with a host computer, we integrated a custom UART module mapped to \texttt{0x60000000}. It exposes two memory-mapped registers: one for data and one for status. The status register indicates whether new data is available or the transmitter is busy, allowing the CPU to use a simple, resource-efficient polling mechanism instead of complex interrupt handling. To ensure high stability during large binary transfers, the receiver's state machine was meticulously designed to sample data and stop bits at precisely the mid-point of the bit period, guaranteeing robust, error-free serial communication at a high speed of 115200 baud (8N1).
+
+\subsection{GPIO Interface}
+For physical interaction, the SoC includes a 32-bit input port (mapped to  \texttt{0x40000000}) and a 32-bit output port (mapped to \texttt{0x50000000}). In our top-level wrapper for the DE1-SoC board, we connected the lower bits of the input port directly to the board's slide switches, and the output port to the red LEDs. This gives the firmware a very simple way to read physical buttons and turn on lights just by reading and writing pointers in C.
+\subsection{Firmware Toolchain and Boot Process}
+The software is written in bare-metal C and compiled into an ELF file using \texttt{riscv64-unknown-elf-gcc}. A custom linker script explicitly maps the instruction text and data segments into the appropriate 32\,KB RAM region (\texttt{0x00004000}).
+
+The boot process is managed by a hybrid \textbf{Dual-Boot Architecture}. The 4\,KB boot ROM (\texttt{0x00000000}) contains a custom bootloader that polls a specific physical hardware switch (\texttt{SW[9]}) upon power-on or reset. If the switch is deactivated, the bootloader instantly jumps execution to the 32\,KB system RAM to run the pre-loaded silicon firmware. If the switch is activated, the bootloader enters a UART download mode, sending a ready signal to the host PC and waiting for a length-prefixed binary payload. It then sequentially writes the incoming firmware bytes directly into RAM before jumping to it. This mechanism dramatically accelerates the hardware-software co-design cycle by allowing infinite, rapid firmware iteration over USB without requiring lengthy FPGA logic resynthesis.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\linewidth]{soc_flow.png}
+    \caption{Overview of the operational flow and internal working logic of the custom RISC-V SoC}
+    \label{fig:soc_flow}
+\end{figure}
+
+\subsection{Firmware Logic Overview}
+The primary C application acts as a \textbf{Performance Benchmark} to evaluate the mathematical processing capabilities of the soft-core processor (Fig.~\ref{fig:soc_flow}). By mapping the peripheral base addresses to volatile C pointers, the hardware I/O interfaces are seamlessly abstracted as standard memory.
+
+Upon execution, the firmware establishes an interactive serial console over UART, presenting a welcome interface to the host PC. It then polls the physical slide switches. When the user flips \texttt{SW[0]}, the firmware begins computing an $8 \times 8$ matrix multiplication algorithm. Because hardware multiplication is disabled in the \texttt{soc.sv} parameters by default, this benchmark rigorously exercises the CPU's ability to execute nested loops, array indexing, and software-emulated mathematics via \texttt{libgcc}.
+
+Crucially, the firmware utilizes the PicoRV32's internal \texttt{cycle} Control and Status Register (CSR) to capture the exact clock cycle count immediately before and after the matrix computation. Once complete, it formats and transmits the resulting matrix and the exact execution time (in clock cycles) back to the host terminal, while simultaneously projecting the lower 10 bits of the cycle count onto the physical LEDs.
+
+\begin{algorithm}[htbp]
+\caption{Matrix Multiplication Benchmark with Cycle Counting}
+\begin{algorithmic}[1]
+\State Print benchmark banner to UART serial console
+\State Wait for rising edge on hardware \texttt{SW[0]}
+\State Capture start time from \texttt{cycle} CSR
+\For{$i = 0$ to $7$}
+    \For{$j = 0$ to $7$}
+        \For{$k = 0$ to $7$}
+            \State $C[i][j] \gets C[i][j] + (A[i][k] \times B[k][j])$
+        \EndFor
+    \EndFor
+\EndFor
+\State Capture end time from \texttt{cycle} CSR
+\State $\Delta_{\text{cycles}} \gets \text{end} - \text{start}$
+\State Transmit formatted matrix $C$ and performance metrics over UART
+\State Output $\Delta_{\text{cycles}} \ \& \ \text{0x3FF}$ to physical LEDs
+\end{algorithmic}
+\end{algorithm}
+
+This firmware serves as a highly robust validation of the entire system, proving that the CPU can interact with physical human input, perform intensive memory and mathematical operations, query internal hardware registers, and handle complex string formatting over a serial link.
+
+\section{Implementation and Experimental Results}\label{sec5}
+After generating the HEX (.hex) file (containing the compiled firmware to be loaded into RAM), the Quartus project is compiled, and the resulting bitstream is flashed onto the DE1-SoC FPGA.
+
+\subsection{Target Platform}
+The design was synthesized and deployed on a Terasic DE1-SoC development board, which is built around an Intel (formerly Altera) Cyclone V SoC device (5CSEMA5F31C6), offering approximately 85,000 programmable logic elements and roughly 4,450 Kbits of embedded block memory. While the DE1-SoC also integrates a dual-core ARM Cortex-A9 hard processor system (HPS) alongside the FPGA fabric, this work uses only the FPGA logic fabric, with the custom RISC-V SoC implemented entirely as soft logic; the HPS was not used, so as to keep the demonstration self-contained within the reconfigurable fabric and independent of any hard-macro processor.
+
+\subsection{Functional Verification}
+The implemented RISC-V SoC was successfully synthesized and deployed on the DE1-SoC FPGA board. After flashing the design, the system immediately booted into the Dual-Boot ROM. By toggling \texttt{SW[9]}, we verified the ability to seamlessly switch between executing pre-synthesized silicon firmware and downloading new iterative firmware payloads over the UART link, bypassing the lengthy Quartus recompilation process entirely.
+
+We verified the computational functionality by initiating the Matrix Multiplication benchmark via \texttt{SW[0]}. The CPU successfully computed the nested arithmetic, and we observed the correctly formatted resulting matrix outputted to the UART serial terminal (PuTTY), alongside the precise execution clock cycles, as shown in Fig.~\ref{fig:riscv-firmware}.
+ \begin{figure}[htbp]
+    \centering
+        \includegraphics[width=0.48\linewidth]{results.png}
+        \caption{Display of UART communication output on a serial terminal}
+        \label{fig:riscv-firmware}
+\end{figure}
+This hardware-in-the-loop test confirmed that the PicoRV32 core successfully navigated complex software execution, internal CSR hardware queries, and memory-mapped peripheral interaction. The fact that the UART console flawlessly printed the generated strings and computed integers proves that the CPU, memory interconnect, and peripheral interfaces are completely stable and communicating correctly under heavy operational loads.
+The following hardware resource usage was reported by Quartus after successful synthesis and fitting.
+% \begin{figure}[htbp]
+%     \centering
+%     \includegraphics[width=0.42\linewidth]{proflatest.png}
+%     \caption{Resource utilization (ALMs, registers, memory) after compilation process}
+%     \label{fig:prof}
+% \end{figure}
+\noindent
+The final SoC implementation was very resource-efficient, occupying only 995 ALMs and 1,085 dedicated registers. The memory footprint was dominated by the 296,960 block memory bits needed for the 4\,KB boot ROM and 32\,KB system RAM. The design utilized 68 I/O pins to connect the switches, LEDs, and UART. No DSP blocks or MLAB memory were used, leaving these specialized resources entirely free for future upgrades. The fan-out remained well within acceptable limits, with a maximum of 1,133 and an average of 3.85, ensuring reliable signal propagation. Table~\ref{tab:resources} summarizes these figures.
+
+\begin{table}[htbp]
+\centering
+\caption{Post-fitting resource utilization of the RISC-V SoC on the DE1-SoC (Cyclone V 5CSEMA5F31C6)}
+\label{tab:resources}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Resource} & \textbf{Utilization} \\
+\midrule
+Adaptive Logic Modules (ALMs) & 995 \\
+Dedicated registers & 1,085 \\
+Block memory bits & 296,960 \\
+I/O pins & 68 \\
+DSP blocks & 0 \\
+MLAB memory & 0 \\
+Maximum fan-out & 1,133 \\
+Average fan-out & 3.85 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+    \subsection{Resource Utilization in Context}
+With 995 ALMs occupied out of the roughly 85,000 logic elements available on the target device, the design leaves the overwhelming majority of the FPGA's fabric free. This headroom is consistent with PicoRV32's stated design goal as a small, auxiliary processor core rather than a resource-maximizing, high-throughput design \cite{wolf2019picorv32}, and with the observation in the literature that minimal RISC-V cores intentionally trade instruction throughput for area \cite{jahnke2023performance}. It is worth noting explicitly, as raised in Section~\ref{sec2}, that ALM-based utilization on Intel/Altera devices is not a like-for-like figure against LUT-based utilization reported for Xilinx devices in other PicoRV32 studies \cite{wolf2019picorv32}; the two metrics reflect different underlying logic cell architectures. The present results should therefore be read as an internally consistent characterization of this specific SoC on this specific device, rather than as a benchmark ranking against cores evaluated on other FPGA families. The absence of DSP block and MLAB usage further confirms that the design's resource footprint is concentrated entirely in general logic and register resources, leaving the FPGA's specialized arithmetic and distributed-memory resources completely available for future functional extensions, such as the TinyML accelerator discussed in Section~\ref{sec7}.
+
+\section{Discussion}\label{sec6}
+The experimental results confirm that a complete RISC-V SoC  CPU core, memory, and peripherals  can be assembled from open-source building blocks and brought up reliably on a mid-range educational FPGA board, using an open toolchain end to end. Several points from this experience are worth discussing in relation to the related work reviewed in Section~\ref{sec2}.
+
+First, the choice of PicoRV32 as the core reflects a deliberate trade-off. As a multi-cycle, non-pipelined design, PicoRV32 does not offer the instruction throughput of pipelined or out-of-order alternatives such as RSD \cite{mashimo2019opensource} or the application-class cores surveyed by D{\"o}rflinger et al. \cite{dorflinger2021comparative}. For the hardware switch-polling and factorial calculation demonstrated in this work, this is not a limiting factor, since the workload is heavily I/O-bound; the processor spends the overwhelming majority of its time waiting for the user to flip a switch rather than executing instructions. For workloads with sustained computational demands  for instance, the onboard signal or image processing that might be required in an embedded sensing application  the resource-versus-performance trade-off characterized by Jahnke et al. \cite{jahnke2023performance} would need to be revisited, and a pipelined core or a hardware accelerator offloaded via PicoRV32's co-processor interface may become necessary.
+
+Second, the decision to expose peripherals directly on PicoRV32's native memory interface, rather than through a standardized bus such as AXI4-Lite or Wishbone, kept the design simple and resource-efficient for the three peripherals implemented here. This approach does not scale gracefully: as the peripheral count grows, hand-written address decoding logic becomes increasingly unwieldy and error-prone compared to a standardized, enumerable bus with well-defined arbitration semantics. Migrating to the AXI4-Lite variant of PicoRV32  available without modifying the core itself \cite{wolf2019picorv32}  would be the natural path if this SoC were extended with additional peripherals such as SPI, I2C, or a timer/counter block.
+
+Third, the fact that PicoRV32 has previously been used as the basis for a silicon-validated ASIC (Raven) is a useful reminder that FPGA prototyping of this kind is not only an end in itself but can also serve as a low-risk validation step before a potential ASIC implementation, particularly relevant for research groups exploring custom or domain-specific silicon without the resources for a full custom core design from scratch.
+
+It is also worth being explicit about the limitations of the present evaluation. The functional validation reported in Section~\ref{sec5} demonstrates correct operation under normal, expected input over the UART interface; it does not constitute a stress test under adversarial or malformed input, nor a timing characterization of the core's maximum operating frequency on this specific device, nor a power measurement. The design is single-core, runs no operating system, and was exercised with a single firmware application rather than a benchmark suite. These are reasonable scoping decisions for a first hardware-software co-design demonstration of this kind, but they mean the resource figures in Table~\ref{tab:resources} should be read as a snapshot of this particular configuration rather than as an exhaustive characterization of what the SoC could achieve under a different peripheral set or a different core configuration.
+
+Finally, from an educational and institutional perspective, the fact that every layer of this system  ISA, core RTL, peripheral logic, linker script, and startup code  is open and inspectable is itself a contribution distinct from any single resource or performance number. It allows the complete hardware-software boundary to be examined and modified by students and researchers, which is precisely the customization and transparency argument made for RISC-V adoption in academic settings in Section~\ref{sec1}.
+
+\section{Conclusion}\label{sec7}
+This work demonstrated the design and deployment of a lightweight RISC-V System-on-Chip on an FPGA platform using open-source tools and hardware. The implementation successfully integrated a split memory architecture, memory-mapped peripherals, and custom firmware execution. Experimental results confirm that the system operates reliably with efficient resource utilization, and a review of the related literature situates the design's resource-versus-performance trade-offs within the broader landscape of open-source RISC-V soft-core implementations. For further improvements, the modularity and openness of RISC-V can be leveraged to enhance its suitability for educational environments, rapid prototyping, and research in fields such as custom accelerators, real-time processing, and edge computing.
+
+As a future perspective, the proposed SoC can be enhanced to support lightweight AI workloads, such as executing TinyML models for image classification or sensor data analysis directly on the FPGA. 
+
+
+These enhancements would directly benefit emerging precision agriculture applications, including lightweight deep learning for tree segmentation \cite{saddik_uav}, multispectral machine learning assessments \cite{saddik_assessing}, and the efficient processing of vegetation indices on low-cost embedded hardware \cite{saddik_sus}.
+
+
+% This enhancement could include the integration of a compact neural network accelerator or the offloading of inference tasks to specialized hardware blocks, potentially through PicoRV32's co-processor interface rather than a full core redesign. 
+
+
+
+
+Such advancements would enable real-time edge intelligence while maintaining low power consumption, making the system well-suited for embedded and IoT applications. Migrating the peripheral interconnect to a standardized bus (AXI4-Lite or Wishbone) is a further natural step, both to ease the addition of new peripherals and to improve the design's portability toward other PicoRV32-based reference platforms. Longer term, and in light of PicoRV32's existing track record in silicon, an ASIC realization of the same architecture would be a logical extension of this FPGA-based validation.
+
+
+\bibliographystyle{splncs04}
+\bibliography{splncs04}
+\end{document}
