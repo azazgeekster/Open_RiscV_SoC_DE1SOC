@@ -1,0 +1,101 @@
+
+Discarded input sections
+
+ .eh_frame      0x00000000       0x2c firmware/start.o
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+ROM              0x00000000         0x00001000         xr
+RAM              0x00004000         0x00004000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00000000      0x2d4
+                0x00000000                        _stext = .
+ CREATE_OBJECT_SYMBOLS
+ *(.reset.text)
+ .reset.text    0x00000000       0x1c firmware/start.o
+                0x00000000                _start
+ *(.text)
+ .text          0x0000001c      0x218 bootrom/bootrom.o
+                0x000000bc                main
+ .text          0x00000234       0xa0 firmware/crt.o
+                0x00000234                ResetHandler
+ .text          0x000002d4        0x0 firmware/start.o
+ *(.text.*)
+                0x000002d4                        . = ALIGN (0x4)
+ *(.rodata)
+ *(.rodata.*)
+                0x000002d4                        . = ALIGN (0x4)
+ *(.srodata)
+ *(.srodata.*)
+                0x000002d4                        . = ALIGN (0x4)
+                0x000002d4                        _etext = .
+
+.rela.dyn       0x000002d4        0x0
+ .rela.text     0x000002d4        0x0 bootrom/bootrom.o
+ .rela.reset.text
+                0x000002d4        0x0 bootrom/bootrom.o
+
+.data           0x00004000        0x0
+                0x00004000                        . = ALIGN (0x4)
+                0x00004000                        _sdata = .
+ *(.data)
+ .data          0x00004000        0x0 bootrom/bootrom.o
+ .data          0x00004000        0x0 firmware/crt.o
+ .data          0x00004000        0x0 firmware/start.o
+ *(.data.*)
+                0x00004000                        . = ALIGN (0x4)
+                0x00004000                        _small_data = .
+ *(.sdata)
+ *(.sdata.*)
+                0x00004000                        . = ALIGN (0x4)
+                0x00004000                        _edata = .
+
+.bss            0x00004000        0x0
+                0x00004000                        . = ALIGN (0x4)
+                0x00004000                        _sbss = .
+ *(.sbss)
+ *(.sbss.*)
+                0x00004000                        . = ALIGN (0x4)
+ *(.bss)
+ .bss           0x00004000        0x0 bootrom/bootrom.o
+ .bss           0x00004000        0x0 firmware/crt.o
+ .bss           0x00004000        0x0 firmware/start.o
+ *(.bss.*)
+                0x00004000                        . = ALIGN (0x4)
+                0x00004000                        _ebss = .
+                0x00008000                        _estack = (ORIGIN (RAM) + LENGTH (RAM))
+                0x00004800                        __global_pointer$ = (_small_data + 0x800)
+
+/DISCARD/
+ *(.eh_frame)
+LOAD bootrom/bootrom.o
+LOAD firmware/crt.o
+LOAD firmware/start.o
+LOAD /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a
+OUTPUT(bootrom.elf elf32-littleriscv)
+
+.comment        0x00000000       0x18
+ .comment       0x00000000       0x18 bootrom/bootrom.o
+                                 0x19 (size before relaxing)
+ .comment       0x00000018       0x19 firmware/crt.o
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 bootrom/bootrom.o
+ .note.GNU-stack
+                0x00000000        0x0 firmware/crt.o
+
+.riscv.attributes
+                0x00000000       0x1c
+ .riscv.attributes
+                0x00000000       0x1c bootrom/bootrom.o
+ .riscv.attributes
+                0x0000001c       0x1c firmware/crt.o
+ .riscv.attributes
+                0x00000038       0x1a firmware/start.o

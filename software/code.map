@@ -1,0 +1,153 @@
+Archive member included to satisfy reference by file (symbol)
+
+/usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+                              firmware/main.o (__mulsi3)
+/usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+                              firmware/main.o (__udivsi3)
+
+Discarded input sections
+
+ .eh_frame      0x00000000       0x2c firmware/start.o
+ .debug_line    0x00000000       0x7a /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_line_str
+                0x00000000       0xa5 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_info    0x00000000       0x31 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_abbrev  0x00000000       0x28 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_aranges
+                0x00000000       0x20 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_str     0x00000000       0xbc /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .debug_line    0x00000000      0x153 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ .debug_line_str
+                0x00000000       0xa2 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ .debug_info    0x00000000       0x5f /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ .debug_abbrev  0x00000000       0x28 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ .debug_aranges
+                0x00000000       0x20 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ .debug_str     0x00000000       0xe9 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+RAM              0x00004000         0x00004000         xrw
+*default*        0x00000000         0xffffffff
+
+Linker script and memory map
+
+
+.text           0x00004000      0xc8c
+                0x00004000                        _stext = .
+ CREATE_OBJECT_SYMBOLS
+ *(.reset.text)
+ .reset.text    0x00004000       0x1c firmware/start.o
+                0x00004000                _start
+ *(.text)
+ .text          0x0000401c      0x75c firmware/main.o
+                0x0000401c                write_out
+                0x00004054                read_switches
+                0x00004084                uart_send
+                0x000040d4                print_str
+                0x00004140                print_num
+                0x00004204                print_num_padded
+                0x0000435c                main
+ .text          0x00004778       0x98 firmware/crt.o
+                0x00004778                ResetHandler
+ .text          0x00004810        0x0 firmware/start.o
+ .text          0x00004810       0x24 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+                0x00004810                __mulsi3
+ .text          0x00004834       0xb4 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+                0x00004834                __divsi3
+                0x0000483c                __hidden___udivsi3
+                0x0000483c                __udivsi3
+                0x00004884                __umodsi3
+                0x000048b8                __modsi3
+ *(.text.*)
+                0x000048e8                        . = ALIGN (0x4)
+ *(.rodata)
+ .rodata        0x000048e8      0x3a1 firmware/main.o
+ *(.rodata.*)
+                0x00004c8c                        . = ALIGN (0x4)
+ *fill*         0x00004c89        0x3 00000000
+ *(.srodata)
+ *(.srodata.*)
+                0x00004c8c                        . = ALIGN (0x4)
+                0x00004c8c                        _etext = .
+
+.rela.dyn       0x00004c8c        0x0
+ .rela.text     0x00004c8c        0x0 firmware/main.o
+ .rela.reset.text
+                0x00004c8c        0x0 firmware/main.o
+
+.data           0x00004c8c      0x20c
+                0x00004c8c                        . = ALIGN (0x4)
+                0x00004c8c                        _sdata = .
+ *(.data)
+ .data          0x00004c8c      0x200 firmware/main.o
+                0x00004c8c                A
+                0x00004d8c                B
+ .data          0x00004e8c        0x0 firmware/crt.o
+ .data          0x00004e8c        0x0 firmware/start.o
+ .data          0x00004e8c        0x0 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .data          0x00004e8c        0x0 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ *(.data.*)
+                0x00004e8c                        . = ALIGN (0x4)
+                0x00004e8c                        _small_data = .
+ *(.sdata)
+ .sdata         0x00004e8c        0xc firmware/main.o
+                0x00004e8c                IPORT_REGS
+                0x00004e90                OPORT_REGS
+                0x00004e94                UART_REGS
+ *(.sdata.*)
+                0x00004e98                        . = ALIGN (0x4)
+                0x00004e98                        _edata = .
+
+.bss            0x00004e98      0x100
+                0x00004e98                        . = ALIGN (0x4)
+                0x00004e98                        _sbss = .
+ *(.sbss)
+ *(.sbss.*)
+                0x00004e98                        . = ALIGN (0x4)
+ *(.bss)
+ .bss           0x00004e98      0x100 firmware/main.o
+                0x00004e98                C
+ .bss           0x00004f98        0x0 firmware/crt.o
+ .bss           0x00004f98        0x0 firmware/start.o
+ .bss           0x00004f98        0x0 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .bss           0x00004f98        0x0 /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
+ *(.bss.*)
+                0x00004f98                        . = ALIGN (0x4)
+                0x00004f98                        _ebss = .
+                0x00008000                        _estack = (ORIGIN (RAM) + LENGTH (RAM))
+                0x0000568c                        __global_pointer$ = (_small_data + 0x800)
+
+/DISCARD/
+ *(.eh_frame)
+LOAD firmware/main.o
+LOAD firmware/crt.o
+LOAD firmware/start.o
+LOAD /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a
+OUTPUT(code.elf elf32-littleriscv)
+
+.comment        0x00000000       0x18
+ .comment       0x00000000       0x18 firmware/main.o
+                                 0x19 (size before relaxing)
+ .comment       0x00000018       0x19 firmware/crt.o
+
+.note.GNU-stack
+                0x00000000        0x0
+ .note.GNU-stack
+                0x00000000        0x0 firmware/main.o
+ .note.GNU-stack
+                0x00000000        0x0 firmware/crt.o
+
+.riscv.attributes
+                0x00000000       0x1c
+ .riscv.attributes
+                0x00000000       0x1c firmware/main.o
+ .riscv.attributes
+                0x0000001c       0x1c firmware/crt.o
+ .riscv.attributes
+                0x00000038       0x1a firmware/start.o
+ .riscv.attributes
+                0x00000052       0x1a /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(muldi3.o)
+ .riscv.attributes
+                0x0000006c       0x1a /usr/lib/gcc/riscv64-unknown-elf/14.2.0/rv32i/ilp32/libgcc.a(div.o)
